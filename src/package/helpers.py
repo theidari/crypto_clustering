@@ -9,6 +9,9 @@ import hvplot.pandas
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import calinski_harabasz_score
+
 
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -17,6 +20,8 @@ sns.set_theme()
 from sklearn.cluster import KMeans
 
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots 
+
 
 # 1. libraries ------------------------------------------------------------------------------------------/
 # a-1) main dependencies and setup
@@ -40,12 +45,13 @@ def line (df, chart_title):
                            line=dict(color=SEVENSET[i%len(SEVENSET)]),
                           )
         traces.append(trace)
+        
     # Create the layout
     layout = go.Layout(title=dict(text=chart_title,
                                   font=dict(size= 24, color= 'black', family= "Times New Roman"),
                                   x=0.5,
                                   y=0.9),
-                       width=1000,
+                       width=1200,
                        height=600,
                        legend=dict(
                            yanchor="top",
@@ -109,4 +115,41 @@ def histogram (df, bins, location):
                             size = 15,
                             weight = 'bold',
                             color = 'white')
+            
+def score_plot(methods):
+    words = [s.name for s in methods]
+    subplots_data = [] 
+    for i, data in enumerate(methods):
+        line_trace = go.Scatter(x=data.index, y=data, mode='lines',
+                                line=dict(color=SEVENSET[i%len(SEVENSET)]))
+        marker_trace = go.Scatter(x=data.index, y=data, mode='markers', marker=dict(size=10,color=SEVENSET[i%len(SEVENSET)]),
+                                  hovertemplate=" number of clusters (k): <b>%{x}</b><br>"+"score: <b>%{y}</b><br>"+"<extra></extra>")
+        plot_trace = [line_trace, marker_trace]
+        subplots_data.append(plot_trace)
+
+
+    layout = go.Layout(width=1300,
+        height=500,
+        plot_bgcolor='#f7f7f7',
+        paper_bgcolor="#f7f7f7")
+
+    fig = make_subplots(rows=1, cols=len(methods), horizontal_spacing=0.1, shared_xaxes=True)
+
+    for i, data in enumerate(subplots_data):
+        for trace in data:
+            fig.add_trace(trace, row=1, col=i+1)
+            fig.update_xaxes(tickfont=dict(size= 14, family='calibri', color='black' ),
+                             showline=True, linewidth=0.5, linecolor='black', mirror=True, row=1, col=i+1)
+            fig.update_yaxes(title=dict(text=words[i].capitalize()+" Score",
+                                        font=dict(size= 18, color= 'black', family= "Calibri")),
+                             tickfont=dict(size= 14, family='calibri', color='black' ),
+                             showline=True, linewidth=0.5, linecolor='black', mirror=True, row=1, col=i+1)
+
+    fig.update_xaxes(title=dict(text="Number of Clusters (k)",
+                                font=dict(size= 18, color= 'black', family= "Calibri")), row=1, col=2)
+
+    # Update the layout of the figure
+    fig.update_layout(layout, showlegend=False) 
+
+    fig.show()        
 # -------------------------------------------------------------------------------------------------------/
