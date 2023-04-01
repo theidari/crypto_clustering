@@ -153,3 +153,89 @@ def score_plot(methods):
 
     fig.show()        
 # -------------------------------------------------------------------------------------------------------/
+# km function and scatter plot
+def scatter_cluster(n, df, columns):
+    km = KMeans(n_clusters = n, n_init = 25, random_state = 1234)
+    km.fit(df)
+    cluster_centers = pd.DataFrame(km.cluster_centers_, columns=df.columns)
+    # Create the trace for the data points
+    trace_points = go.Scatter(
+        x=df[columns[0]],
+        y=df[columns[1]],
+        mode='markers',
+        name='Coins',
+        marker=dict(
+            size=7.5,
+            color=km.labels_,
+            colorscale=SEVENSET,
+            opacity=0.9,
+            line=dict(
+                width=1,
+                color='black'
+            )
+        ),
+        text=df.index  # Set the hover text to the index value
+    )
+
+    # Create the trace for the centroid points
+    trace_centroids = go.Scatter(
+        x=cluster_centers[columns[0]],
+        y=cluster_centers[columns[1]],
+        mode='markers',
+        name='Cluster Centers',
+        marker=dict(
+            size=30,
+            color=cluster_centers.index,
+            colorscale=SEVENSET,
+            symbol='circle',
+            opacity=0.3,
+            line=dict(
+                width=1,
+                color='black'
+            )
+        ),
+        text=[f"Centroid {i}" for i in range(len(cluster_centers))]  # Set the hover text to "Centroid {i}"
+    )
+
+    # Define the layout of the plot
+    layout = go.Layout(
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor= '#f7f7f7',
+            font=dict(color='black', size=14)
+
+    ),
+        width=700,
+        height=700,
+        title=dict(text="GO Plot",
+                  font=dict(size= 24, color= 'black'),
+                  x=0.5,
+                  y=0.91),
+        xaxis=dict(title='Price Change Percentage 24h',
+                  showline=True,
+            linewidth=0.5,
+            linecolor='black',
+            mirror=True,
+                  color= 'black',
+                   gridcolor='white'),
+        yaxis=dict(title='Price Change Percentage 7d',
+                   showline=True,
+                   linewidth=0.5,
+                   linecolor='black',
+                   mirror=True,
+                   color= 'black',
+                   gridcolor='white'),
+        hovermode='closest',
+        plot_bgcolor='#ffffff',
+        paper_bgcolor="#f7f7f7"
+    )
+
+    # Create the figure object and add the traces to it
+    fig = go.Figure(data=[trace_points, trace_centroids], layout=layout)
+
+    # Show the figure
+    fig.show()
+
