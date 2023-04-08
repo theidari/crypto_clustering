@@ -4,7 +4,7 @@
 
 # Folders and files names
 DATA_URL = "../data/"
-OUTPUT_URL = "../Output/"
+OUTPUT_URL = "../results/"
 
 # Station location (station_location.py) constants
 SESSION_COLUMN_NAMES = ["station", "name", "latitude", "longitude", "elevation", "number_of_collected_data"]

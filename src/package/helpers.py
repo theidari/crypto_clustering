@@ -14,7 +14,8 @@ from sklearn.metrics import calinski_harabasz_score # Calinski Harabasz method
 
 # plotting dependencies and setup  
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots 
+from plotly.subplots import make_subplots
+import plotly.io as pio
 
 # package dependencies and setup
 from package.constants import * # constants
@@ -27,15 +28,27 @@ def clusters_methods(df, methods):
     optimal_ks = []
     for method in methods:
         scores = []
+        
+        # create a for loop to compute the inertia with each possible value of k
         for k in range(2, 11):
+            
+            # create a KMeans model using the loop counter for the n_clusters
             km = KMeans(n_clusters=k, n_init=40, random_state=1)
+            
+            # fit the model to the data using dataframe
             km.fit(df)
+            
+            # append the model to the inertia list
+            # wcss elbow 
             if method == "wcss_elbow":
                 scores.append(km.inertia_)
+                
+            #others    
             else:
                 query = f"""scores.append({method}_score(df, km.labels_))"""
                 exec(query)
-        # Create a series with the data
+                
+        # create a series with the data
         method_series = pd.Series(scores, index=range(2, 11), name=method.replace("_", " ").title())
         
         #finding best k
@@ -65,10 +78,10 @@ def clusters_methods(df, methods):
         
     return methods_list, optimal_ks
 
-# Plotting functions
+# plotting functions
 # line chart _________________________________________________________________________________________________________________________________
 def line (df, chart_title):
-    # Create a list of traces for each column in the DataFrame
+    # create a list of traces for each column in the DataFrame
     traces = []
     for i, col in enumerate(df.columns):
         col_name = col.split("_")
@@ -80,7 +93,7 @@ def line (df, chart_title):
                           )
         traces.append(trace)
         
-    # Create the layout
+    # create the layout
     layout = go.Layout(title=dict(text=chart_title,
                                   font=dict(size= 24, color= 'black', family= "Times New Roman"),
                                   x=0.5,
@@ -109,7 +122,7 @@ def line (df, chart_title):
                        plot_bgcolor='#f7f7f7',
                        paper_bgcolor="#f7f7f7")
 
-    # Create the figure
+    # create the figure
     fig = go.Figure(data=traces, layout=layout)
     # Show the figure
     fig.show()
@@ -148,17 +161,17 @@ def score_plot(methods, optimal_ks):
     fig.update_xaxes(title=dict(text="Number of Clusters (k)",
                                 font=dict(size= 18, color= 'black', family= "Calibri")), row=1, col=2)
 
-    # Update the layout of the figure
+    # update the layout of the figure
     fig.update_layout(layout, showlegend=False) 
 
     fig.show()
     
 # km function and scatter plot _______________________________________________________________________________________________________________
 def scatter_cluster(n, df, columns):
-    km = KMeans(n_clusters = n, n_init = 25, random_state = 1234)
+    km = KMeans(n_clusters = n, n_init = 25, random_state = 1)
     km.fit(df)
     cluster_centers = pd.DataFrame(km.cluster_centers_, columns=df.columns)
-    # Create the trace for the data points
+    # create the trace for the data points
     trace_points = go.Scatter(
         x=df[columns[0]],
         y=df[columns[1]],
@@ -174,10 +187,11 @@ def scatter_cluster(n, df, columns):
                 color='black'
             )
         ),
-        text=df.index  # Set the hover text to the index value
+        text=df.index,  # Set the hover text to the index value
+        showlegend=False
     )
 
-    # Create the trace for the centroid points
+    # create the trace for the centroid points
     trace_centroids = go.Scatter(
         x=cluster_centers[columns[0]],
         y=cluster_centers[columns[1]],
@@ -194,23 +208,59 @@ def scatter_cluster(n, df, columns):
                 color='black'
             )
         ),
-        text=[f"Centroid {i}" for i in range(len(cluster_centers))]  # Set the hover text to "Centroid {i}"
+        text=[f"Centroid {i}" for i in range(len(cluster_centers))],  # Set the hover text to "Centroid {i}"
+        showlegend=False
     )
 
-    # Define the layout of the plot
+    # create dummy trace for legend
+    dummy_point = go.Scatter(
+        x=[None],
+        y=[None],
+        mode='markers',
+        marker=dict(
+            size=7.5,
+            color="lightgray",
+            colorscale=SEVENSET,
+            opacity=1,
+            line=dict(
+                width=1,
+                color='black'
+            )
+            ),
+        name="Coins"  # set the name to an empty string so it is not visible in the legend
+    )
+    
+    dummy_centroids = go.Scatter(
+            x=[None],
+            y=[None],
+            mode='markers',
+            marker=dict(
+                size=30,
+                color="lightgray",
+                colorscale=SEVENSET,
+                symbol='circle',
+                opacity=1,
+                line=dict(
+                    width=1,
+                    color='lightgray'
+                )),
+            name="Cluster Centers"  # set the name to a visible string so it appears in the legend
+        )
+    
+    # define the layout of the plot
     layout = go.Layout(
         legend=dict(
             yanchor="top",
             y=0.99,
             xanchor="left",
             x=0.01,
-            bgcolor= '#f7f7f7',
+            bgcolor= '#ffffff',
             font=dict(color='black', size=14)
 
     ),
         width=700,
         height=700,
-        title=dict(text="clustering with number of clusters "+str(n),
+        title=dict(text="Clustering with k= "+str(n),
                   font=dict(size= 20, color= 'black'),
                   x=0.5,
                   y=0.91),
@@ -233,9 +283,9 @@ def scatter_cluster(n, df, columns):
         paper_bgcolor="#f7f7f7"
     )
 
-    # Create the figure object and add the traces to it
-    fig = go.Figure(data=[trace_points, trace_centroids], layout=layout)
-
+    # create the figure object and add the traces to it
+    fig = go.Figure(data=[trace_points, trace_centroids, dummy_point, dummy_centroids], layout=layout)
+    
     # Show the figure
     fig.show()
 
