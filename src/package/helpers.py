@@ -1,38 +1,72 @@
 # --------------------------------------------------------------------------------------------------------------------------------------------
-# ------------------------------------ All libraries, variables and functions are defined in this fil ----------------------------------------
+# ------------------------------------ All libraries, variables and functions are defined in this file ---------------------------------------
 # --------------------------------------------------------------------------------------------------------------------------------------------
 
-
+# main dependencies and setup
 import pandas as pd
 
-import hvplot.pandas
-from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score
-from sklearn.metrics import calinski_harabasz_score
+# ml dependencies and setup
+from sklearn.cluster import KMeans # KMeans
+from sklearn.decomposition import PCA # PCA
+from sklearn.preprocessing import StandardScaler # StandardScale to resize the distribution of values 
+from sklearn.metrics import silhouette_score # Silhouette method
+from sklearn.metrics import calinski_harabasz_score # Calinski Harabasz method
 
-
-from matplotlib import pyplot as plt
-import seaborn as sns
-sns.set_theme()
-
-from sklearn.cluster import KMeans
-
+# plotting dependencies and setup  
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots 
 
-
-# 1. libraries ------------------------------------------------------------------------------------------/
-# a-1) main dependencies and setup
+# package dependencies and setup
 from package.constants import * # constants
 
+# --------------------------------------------------------------------------------------------------------------------------------------------
+# functions
+# clustering function ________________________________________________________________________________________________________________________
+def clusters_methods(df, methods):
+    methods_list = []
+    optimal_ks = []
+    for method in methods:
+        scores = []
+        for k in range(2, 11):
+            km = KMeans(n_clusters=k, n_init=40, random_state=1)
+            km.fit(df)
+            if method == "wcss_elbow":
+                scores.append(km.inertia_)
+            else:
+                query = f"""scores.append({method}_score(df, km.labels_))"""
+                exec(query)
+        # Create a series with the data
+        method_series = pd.Series(scores, index=range(2, 11), name=method.replace("_", " ").title())
+        
+        #finding best k
+        if method == "wcss_elbow": # for elbow method
+            
+            # calculate the percentage of variance explained for each value of k
+            ms_index = list(method_series.index)
+            pve = [100 * (1 - (method_series[i] / method_series[ms_index[0]])) for i in ms_index]
 
-# b-1) plotting
+            # Find the elbow point (i.e., the value of k where the PVE starts to level off)
+            threshold = 11
+            for i in range(1, len(pve)):
+                if abs(pve[i] - pve[i-1]) < threshold:
+                    optimal_k = i + 1
+                    break
+                    
+        elif method == "silhouette": # for silhouette method
+            point = method_series.max()
+            optimal_k = method_series.index[method_series == point][0]
 
-# -------------------------------------------------------------------------------------------------------/
+        elif method == "calinski_harabasz": # for calinski method
+            optimal_k = method_series.idxmax()
+                    
+        # create list of results
+        methods_list.append(method_series)
+        optimal_ks.append(optimal_k)
+        
+    return methods_list, optimal_ks
 
-# Plotting function --------------------------------------------------------------------------------/
+# Plotting functions
+# line chart _________________________________________________________________________________________________________________________________
 def line (df, chart_title):
     # Create a list of traces for each column in the DataFrame
     traces = []
@@ -80,43 +114,8 @@ def line (df, chart_title):
     # Show the figure
     fig.show()
 
-def histogram (df, bins, location):
-    # Set the figure size
-    plt.figure(figsize=(FIG_HEIGHT, FIG_WIDTH))
-
-    #Plot the Clusters
-    ax = sns.scatterplot(data = df_market_scaled,
-                         x = 'price_change_percentage_24h',
-                         y = 'price_change_percentage_7d', 
-                         hue = km.labels_, 
-                         palette = 'colorblind', 
-                         alpha = 0.8, 
-                         s = 150,
-                         legend = False)
-
-    #Plot the Centroids
-    ax = sns.scatterplot(data = cluster_centers, 
-                         x = 'price_change_percentage_24h',
-                         y = 'price_change_percentage_7d', 
-                         hue = cluster_centers.index, 
-                         palette = 'colorblind', 
-                         s = 600,
-                         marker = 'D',
-                         ec = 'black', 
-                         legend = False)
-
-    # Add Centroid Labels
-    for i in range(len(cluster_centers)):
-                   plt.text(x = cluster_centers.price_change_percentage_24h[i], 
-                            y = cluster_centers.price_change_percentage_7d[i],
-                            s = i, 
-                            horizontalalignment='center',
-                            verticalalignment='center',
-                            size = 15,
-                            weight = 'bold',
-                            color = 'white')
-            
-def score_plot(methods):
+# clustering plot ____________________________________________________________________________________________________________________________
+def score_plot(methods, optimal_ks):
     words = [s.name for s in methods]
     subplots_data = [] 
     for i, data in enumerate(methods):
@@ -139,21 +138,22 @@ def score_plot(methods):
         for trace in data:
             fig.add_trace(trace, row=1, col=i+1)
             fig.update_xaxes(tickfont=dict(size= 14, family='calibri', color='black' ),
-                             showline=True, linewidth=0.5, linecolor='black', mirror=True, row=1, col=i+1)
-            fig.update_yaxes(title=dict(text=words[i].capitalize()+" Score",
+                             showline=True, linewidth=0.5, linecolor='black', mirror=True, dtick=1, row=1, col=i+1)
+            fig.update_yaxes(title=dict(text=words[i]+" Score",
                                         font=dict(size= 18, color= 'black', family= "Calibri")),
                              tickfont=dict(size= 14, family='calibri', color='black' ),
                              showline=True, linewidth=0.5, linecolor='black', mirror=True, row=1, col=i+1)
-
+        fig.add_vline(x=optimal_ks[i], line_width=1, line_dash="dash", line_color="black", row=1, col=i+1)
+        
     fig.update_xaxes(title=dict(text="Number of Clusters (k)",
                                 font=dict(size= 18, color= 'black', family= "Calibri")), row=1, col=2)
 
     # Update the layout of the figure
     fig.update_layout(layout, showlegend=False) 
 
-    fig.show()        
-# -------------------------------------------------------------------------------------------------------/
-# km function and scatter plot
+    fig.show()
+    
+# km function and scatter plot _______________________________________________________________________________________________________________
 def scatter_cluster(n, df, columns):
     km = KMeans(n_clusters = n, n_init = 25, random_state = 1234)
     km.fit(df)
@@ -239,3 +239,4 @@ def scatter_cluster(n, df, columns):
     # Show the figure
     fig.show()
 
+# --------------------------------------------------------------------------------------------------------------------------------------------
