@@ -95,7 +95,7 @@ def line (df, chart_title):
         
     # create the layout
     layout = go.Layout(title=dict(text=chart_title,
-                                  font=dict(size= 24, color= 'black', family= "Times New Roman"),
+                                  font=dict(size= 20, color= 'black', family= "Times New Roman"),
                                   x=0.5,
                                   y=0.9),
                        width=1200,
@@ -171,6 +171,10 @@ def scatter_cluster(n, df, columns):
     km = KMeans(n_clusters = n, n_init = 25, random_state = 1)
     km.fit(df)
     cluster_centers = pd.DataFrame(km.cluster_centers_, columns=df.columns)
+    
+    # predict the clusters to group the cryptocurrencies using the scaled data
+    prediction = km.predict(df)
+    
     # create the trace for the data points
     trace_points = go.Scatter(
         x=df[columns[0]],
@@ -261,9 +265,9 @@ def scatter_cluster(n, df, columns):
         width=700,
         height=700,
         title=dict(text="Clustering with k= "+str(n),
-                  font=dict(size= 20, color= 'black'),
+                  font=dict(size= 20, color= 'black', family= "Times New Roman"),
                   x=0.5,
-                  y=0.91),
+                  y=0.9),
         xaxis=dict(title='Price Change Percentage 24h',
                   showline=True,
             linewidth=0.5,
@@ -287,6 +291,118 @@ def scatter_cluster(n, df, columns):
     fig = go.Figure(data=[trace_points, trace_centroids, dummy_point, dummy_centroids], layout=layout)
     
     # Show the figure
-    fig.show()
+    return fig.show(), prediction
 
+# km function and 3dscatter plot _____________________________________________________________________________________________________________
+def scatter_3d_cluster(n, df, columns):
+    km = KMeans(n_clusters = n, n_init = 25, random_state = 1)
+    km.fit(df)
+    cluster_centers = pd.DataFrame(km.cluster_centers_, columns=df.columns)
+    
+    # predict the clusters to group the cryptocurrencies using the scaled data
+    prediction = km.predict(df)
+    
+    # create the trace for the data points
+    trace_points = go.Scatter3d(
+        x=df[columns[0]],
+        y=df[columns[1]],
+        z=df[columns[2]],
+        mode='markers',
+        name='Coins',
+        marker=dict(
+            size=4,
+            color=km.labels_,
+            colorscale=SEVENSET,
+            opacity=0.9,
+            line=dict(
+                width=1,
+                color='black'
+            )
+        ),
+        text=df.index,  # Set the hover text to the index value
+        showlegend=False
+    )
+    
+    # create the trace for the centroid points
+    trace_centroids = go.Scatter3d(
+        x=cluster_centers[columns[0]],
+        y=cluster_centers[columns[1]],
+        z=cluster_centers[columns[2]],
+        mode='markers',
+        name='Cluster Centers',
+        marker=dict(
+            size=15,
+            color=cluster_centers.index,
+            colorscale=SEVENSET,
+            symbol='circle',
+            opacity=0.3,
+            line=dict(
+                width=1,
+                color='black'
+            )
+        ),
+        text=[f"Centroid {i}" for i in range(len(cluster_centers))],  # Set the hover text to "Centroid {i}"
+        showlegend=False
+    )
+    
+    # define the layout of the plot
+    layout = go.Layout(
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor= '#ffffff',
+            font=dict(color='black', size=14)
+
+    ),
+        width=750,
+        height=750,
+        title=dict(text="Clustering with k= "+str(n),
+                  font=dict(size= 20, color= 'black', family= "Times New Roman"),
+                  x=0.5,
+                  y=0.9),
+       scene=dict(
+        aspectmode='manual',
+        aspectratio=dict(x=1, y=1, z=1),
+        xaxis=dict(title=columns[0],
+                  showline=True,
+                  linewidth=0.5,
+                  linecolor='black',
+                  mirror=True,
+                  color= 'black',
+                  gridcolor='darkgray',
+                  showbackground=True, # set the x-axis background to be visible
+                  backgroundcolor="#ffffff"), # set the x-axis background color to white,
+        yaxis=dict(title=columns[1],
+                   showline=True,
+                   linewidth=0.5,
+                   linecolor='black',
+                   mirror=True,
+                   color= 'black',
+                   gridcolor='darkgray',
+                   showbackground=True, # set the x-axis background to be visible
+                  backgroundcolor="#ffffff"), # set the x-axis background color to white,
+        zaxis=dict(title=columns[2],
+                   showline=True,
+                   linewidth=0.5,
+                   linecolor='black',
+                   mirror=True,
+                   color= 'black',
+                   gridcolor='darkgray',
+                   showbackground=True, # set the x-axis background to be visible
+                  backgroundcolor="#ffffff"), # set the x-axis background color to white,      
+           bgcolor="#f7f7f7"
+    ),
+        hovermode='closest',
+        paper_bgcolor="#f7f7f7"
+    )
+
+    # create the figure object and add the traces to it
+    fig = go.Figure(data=[trace_points, trace_centroids], layout=layout)
+    
+    # Show the figure
+    return fig.show(), prediction
+
+print(f"☑ helpers is imporetd")    
 # --------------------------------------------------------------------------------------------------------------------------------------------
