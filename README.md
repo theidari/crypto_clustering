@@ -6,7 +6,7 @@
 A digital currency known as cryptocurrency is established on cryptographic evidence that is essential to confirm each transaction. Cryptocurrencies are distinguished by several features, including their lack of dependence on central authorities such as central banks, their provision of a degree of pseudo-anonymity, and their ability to protect against double spending attacks.<sup><b>[<a href="https://github.com/theidari/CryptoClustering/edit/main/README.md#references">1</a>]</b></sup> <b>in this project</b> applies financial Python programming and unsupervised learning algorithms to categorize cryptocurrencies according to their performance during different timeframes, using K-Means and Principal Component Analysis (PCA). The dataset used in this analysis comprises a CSV file that includes returns (price fluctuations) data of cryptocurrencies across diverse time periods.
 
 <h3>Research Report</h3>
-Access the research report through this link: <a href="https://theidari.github.io/CryptoClustering/"> link to project report</a>
+Access the research report through this link: <b><a href="https://theidari.github.io/CryptoClustering/"> link to project report</a></b>
 
 </p>
 <h3>References</h3>
